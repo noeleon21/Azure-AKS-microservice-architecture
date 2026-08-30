@@ -34,6 +34,13 @@ variable "subnet_address_prefix" {
   default     = ["10.0.1.0/24"]
 }
 
+variable "service_cidr" {
+  description = "CIDR for AKS service IP addresses; must not overlap the VNet or subnet ranges"
+  type        = string
+  default     = "172.20.0.0/16"
+}
+
+
 variable "aks_cluster_name" {
   description = "Name of the AKS cluster"
   type        = string

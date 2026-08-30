@@ -29,10 +29,10 @@ resource "azurerm_kubernetes_cluster" "aks" {
   dns_prefix          = var.dns_prefix
 
   default_node_pool {
-    name       = "system"
-    node_count = var.node_count
-    vm_size    = var.node_vm_size
-    type       = "VirtualMachineScaleSets"
+    name           = "system"
+    node_count     = var.node_count
+    vm_size        = var.node_vm_size
+    type           = "VirtualMachineScaleSets"
     vnet_subnet_id = azurerm_subnet.aks.id
   }
 
@@ -43,6 +43,9 @@ resource "azurerm_kubernetes_cluster" "aks" {
   network_profile {
     network_plugin    = "azure"
     load_balancer_sku = "standard"
+    service_cidr      = var.service_cidr
+    dns_service_ip    = cidrhost(var.service_cidr, 10)
+
   }
 
   tags = {
