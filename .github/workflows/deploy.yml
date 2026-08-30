@@ -1,29 +1,63 @@
-name: Deploy Terraform with OIDC
+name: Deploy AKS infrastructure with Terraform
+
 on:
   push:
     branches:
       - main
   workflow_dispatch:
+
 permissions:
   id-token: write
   contents: read
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+
+    env:
+      ARM_USE_OIDC: "true"
+      ARM_CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      TF_VAR_location: ${{ vars.AZURE_LOCATION }}
+      TF_VAR_resource_group_name: ${{ vars.RESOURCE_GROUP_NAME }}
+      TF_VAR_vnet_name: ${{ vars.VNET_NAME }}
+      TF_VAR_vnet_address_space: ${{ vars.VNET_ADDRESS_SPACE }}
+      TF_VAR_subnet_name: ${{ vars.SUBNET_NAME }}
+      TF_VAR_subnet_address_prefix: ${{ vars.SUBNET_ADDRESS_PREFIX }}
+      TF_VAR_aks_cluster_name: ${{ vars.AKS_CLUSTER_NAME }}
+      TF_VAR_dns_prefix: ${{ vars.DNS_PREFIX }}
+      TF_VAR_node_count: ${{ vars.NODE_COUNT }}
+      TF_VAR_node_vm_size: ${{ vars.NODE_VM_SIZE }}
+      TF_VAR_project: ${{ vars.PROJECT_NAME }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: 'Az CLI Login using OIDC'
+
+      - name: Azure login with OIDC
         uses: azure/login@v3
         with:
           client-id: ${{ secrets.CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
       - name: Terraform Plan
-        run: terraform plan
+        run: terraform plan -input=false -out=tfplan
+
       - name: Terraform Apply
-        run: terraform apply -auto-approve
+        run: terraform apply -input=false -auto-approve tfplan
